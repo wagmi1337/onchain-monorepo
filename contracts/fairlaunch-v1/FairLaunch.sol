@@ -7,8 +7,9 @@ import {IERC20, ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 
 import {FairToken} from "./FairToken.sol";
+import {IFairLaunch} from "./interfaces/IFairLaunch.sol";
 
-contract FairLaunch is Ownable {
+contract FairLaunch is Ownable, IFairLaunch {
     // Launch helpers
     IFactory factory = IFactory(0x33128a8fC17869897dcE68Ed026d694621f6FDfD);
     INFPManager nfpManager =
