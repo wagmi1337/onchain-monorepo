@@ -48,6 +48,15 @@ describe("FairLaunch", function () {
                 )
         ).changeTokenBalance(wagmi, user, 222)
 
+        await expect(
+            airdrop
+                .connect(user)
+                .claimAirdrop(
+                    user,
+                    222,
+                    await owner.signMessage(message)
+                )
+        ).revertedWithCustomError(airdrop, "AlreadyClaimed")
 
     });
 });

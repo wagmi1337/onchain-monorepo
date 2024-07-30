@@ -11,8 +11,10 @@ contract Airdrop is Ownable {
     using ECDSA for bytes32;
 
     error WrongSignature();
+    error AlreadyClaimed();
 
     IERC20 public immutable WAGMI;
+    mapping(address => bool) public isClaimed;
 
     constructor(address wagmi) Ownable(msg.sender) {
         WAGMI = IERC20(wagmi);
@@ -23,10 +25,14 @@ contract Airdrop is Ownable {
         uint256 amount,
         bytes calldata signature
     ) external {
+        if (isClaimed[msg.sender]) revert AlreadyClaimed();
+
         if (msg.sender != owner()) {
             bytes32 message = keccak256(abi.encodePacked(recipient, amount));
             if (message.toEthSignedMessageHash().recover(signature) != owner())
                 revert WrongSignature();
+
+            isClaimed[msg.sender] = true;
         }
 
         WAGMI.transfer(recipient, amount);
