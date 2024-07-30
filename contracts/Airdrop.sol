@@ -13,8 +13,10 @@ contract Airdrop is Ownable {
     error WrongSignature();
     error AlreadyClaimed();
 
+    event Claimed(address user, uint256 amount);
+
     IERC20 public immutable WAGMI;
-    mapping(address => bool) public isClaimed;
+    mapping(address => uint256) public claimedAmount;
 
     constructor(address wagmi) Ownable(msg.sender) {
         WAGMI = IERC20(wagmi);
@@ -25,14 +27,15 @@ contract Airdrop is Ownable {
         uint256 amount,
         bytes calldata signature
     ) external {
-        if (isClaimed[msg.sender]) revert AlreadyClaimed();
+        if (claimedAmount[recipient] > 0) revert AlreadyClaimed();
 
         if (msg.sender != owner()) {
             bytes32 message = keccak256(abi.encodePacked(recipient, amount));
             if (message.toEthSignedMessageHash().recover(signature) != owner())
                 revert WrongSignature();
 
-            isClaimed[msg.sender] = true;
+            claimedAmount[recipient] = amount;
+            emit Claimed(recipient, amount);
         }
 
         WAGMI.transfer(recipient, amount);
