@@ -59,6 +59,14 @@ contract AeroWagmi is UUPSUpgradeable, OwnableUpgradeable, IAeroWagmi {
         return _launch(marketcapUsd, tickSpacing, deploySalt, name, symbol);
     }
 
+    receive() external payable {
+        _buyWagmi(msg.sender);
+    }
+
+    fallback() external payable {
+        _buyWagmi(msg.sender);
+    }
+
     function calcDeploySalt(
         string memory name,
         string memory symbol
@@ -94,6 +102,8 @@ contract AeroWagmi is UUPSUpgradeable, OwnableUpgradeable, IAeroWagmi {
         string memory name,
         string memory symbol
     ) internal returns (address token, uint256 buyoutTokenAmount) {
+        require(msg.value > 0, LaunchWithoutBuyout());
+
         // 1. deploy
         token = address(
             new AeroWagmiToken{salt: deploySalt}(supply, name, symbol)
@@ -119,7 +129,7 @@ contract AeroWagmi is UUPSUpgradeable, OwnableUpgradeable, IAeroWagmi {
                 amount0Min: 0,
                 amount1Desired: 0,
                 amount1Min: 0,
-                recipient: 0x000000000000000000000000000000000000dEaD,
+                recipient: address(this),
                 deadline: block.timestamp,
                 sqrtPriceX96: _tick(tick, tickSpacing).getSqrtRatioAtTick()
             })
@@ -131,28 +141,26 @@ contract AeroWagmi is UUPSUpgradeable, OwnableUpgradeable, IAeroWagmi {
         );
 
         // 3. buyout
-        WETH.deposit{value: msg.value}();
-        uint256 wagmiAmount = WAGMI_ETH_POOL.getAmountOut(
-            (msg.value * (100 - buyoutFeePct)) / 100,
-            address(WETH)
-        );
-        WETH.transfer(address(WAGMI_ETH_POOL), msg.value);
-        WAGMI_ETH_POOL.swap(0, wagmiAmount, address(this), bytes(""));
+        uint256 wagmiAmount = _buyWagmi(address(this));
         if (WAGMI.allowance(address(this), address(swapRouter)) < wagmiAmount) {
             WAGMI.approve(address(swapRouter), type(uint256).max);
         }
-        buyoutTokenAmount = swapRouter.exactInputSingle(
+        swapRouter.exactInputSingle(
             ISwapRouter.ExactInputSingleParams(
                 address(WAGMI),
                 token,
                 tickSpacing,
-                msg.sender,
+                address(this),
                 block.timestamp,
                 wagmiAmount,
                 0,
                 0
             )
         );
+
+        // we transfer all balance instead of direct swap to creator account to sweep dust from lp
+        buyoutTokenAmount = IERC20(token).balanceOf(address(this));
+        IERC20(token).transfer(msg.sender, buyoutTokenAmount);
 
         // 4. Save all info
         _tokenInfos[token] = TokenInfo({
@@ -161,6 +169,18 @@ contract AeroWagmi is UUPSUpgradeable, OwnableUpgradeable, IAeroWagmi {
             positionId: positionId
         });
         emit NewToken(token, pool, msg.sender, msg.value, buyoutTokenAmount);
+    }
+
+    function _buyWagmi(
+        address recipient
+    ) internal returns (uint256 wagmiAmount) {
+        WETH.deposit{value: msg.value}();
+        wagmiAmount = WAGMI_ETH_POOL.getAmountOut(
+            (msg.value * (100 - buyoutFeePct)) / 100,
+            address(WETH)
+        );
+        WETH.transfer(address(WAGMI_ETH_POOL), msg.value);
+        WAGMI_ETH_POOL.swap(0, wagmiAmount, recipient, bytes(""));
     }
 
     function _getWagmiUsdPrice() internal view returns (uint256) {

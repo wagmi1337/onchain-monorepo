@@ -9,6 +9,7 @@ interface IAeroWagmi {
     }
 
     error BadDeploySalt(address token);
+    error LaunchWithoutBuyout();
 
     event NewToken(
         address token,
