@@ -18,6 +18,7 @@ contract LockUNCXModule is Ownable {
     error BadPositionOwner(address positionOwner);
     error BadPositionOperator(address positionOperator);
     error LockFailed();
+    error OnlyEOA();
 
     event PositionLocked(uint256 positionId);
 
@@ -59,20 +60,17 @@ contract LockUNCXModule is Ownable {
         feeName = feeName_;
     }
 
-    function updateLockByPosition(uint256 lockId) external onlyOwner {
-        uint256 positionId = IUNCXLocker(UNCX_LOCKER).getLock(lockId).nft_id;
-        lockByPosition[positionId] = lockId;
+    function updateLockByPosition(uint256 lockId) external {
+        IUNCXLocker.Lock memory lockInfo = IUNCXLocker(UNCX_LOCKER).getLock(
+            lockId
+        );
+        require(lockInfo.nftPositionManager == NFP_MANAGER);
+        lockByPosition[lockInfo.nft_id] = lockId;
     }
 
     function tokenPrice(uint256 positionId) public view returns (uint256) {
         IUniswapV3Pool pool = _getPool(positionId);
-
-        uint32[] memory secondsAgo = new uint32[](2);
-        secondsAgo[0] = 30;
-        secondsAgo[1] = 0;
-
-        (int56[] memory tickCumulatives, ) = pool.observe(secondsAgo);
-        int24 tick = int24((tickCumulatives[1] - tickCumulatives[0]) / 30);
+        (, int24 tick, , , , , ) = pool.slot0();
 
         uint256 sqrtPriceX96 = TickMath.getSqrtRatioAtTick(
             pool.token0() == 0x4200000000000000000000000000000000000006
@@ -93,6 +91,8 @@ contract LockUNCXModule is Ownable {
     }
 
     function _lock(uint256 positionId) internal {
+        require(msg.sender == tx.origin, OnlyEOA());
+
         address positionOwner = IERC721(NFP_MANAGER).ownerOf(positionId);
         require(positionOwner == FAIR_LAUNCH, BadPositionOwner(positionOwner));
 
@@ -200,7 +200,7 @@ interface IUNCXLocker {
 
     struct Lock {
         uint256 lock_id;
-        INonfungiblePositionManager nftPositionManager;
+        address nftPositionManager;
         address pool;
         uint256 nft_id;
         address owner;
