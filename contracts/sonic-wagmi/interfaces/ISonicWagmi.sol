@@ -23,6 +23,8 @@ interface ISonicWagmi {
 
     function tokenInfo(address token) external view returns (TokenInfo memory);
 
+    function numTokens() external view returns (uint256);
+
     function launch(
         int24 tickLower,
         int24 tickUpper,
@@ -32,6 +34,10 @@ interface ISonicWagmi {
         string memory name,
         string memory symbol
     ) external payable returns (address token, uint256 buyoutTokenAmount);
+
+    function collectFee(
+        address token
+    ) external returns (uint256 wsAmount, uint256 tokenAmount);
 
     function calcDeploySalt(
         uint256 totalSupply,

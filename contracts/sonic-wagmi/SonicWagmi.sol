@@ -32,6 +32,11 @@ contract SonicWagmi is UUPSUpgradeable, OwnableUpgradeable, ISonicWagmi {
     IFactory constant factory =
         IFactory(0xcD2d0637c94fe77C2896BbCBB174cefFb08DE6d7);
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize(address _owner) public virtual initializer {
         __Ownable_init(_owner);
         __UUPSUpgradeable_init();
