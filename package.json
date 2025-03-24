@@ -9,7 +9,11 @@
     "@openzeppelin/contracts-upgradeable": "^5.0.2",
     "@openzeppelin/hardhat-upgrades": "^3.5.0",
     "@safe-global/safe-smart-account": "github:safe-global/safe-smart-account",
+    "@uniswap/v2-periphery": "github:Uniswap/v2-periphery",
     "@uniswap/v3-core": "github:Uniswap/v3-core#0.8",
-    "@uniswap/v3-periphery": "github:Uniswap/v3-periphery#0.8"
+    "@uniswap/v3-periphery": "github:Uniswap/v3-periphery#0.8",
+    "elliptic-curve-solidity": "github:witnet/elliptic-curve-solidity",
+    "hardhat-gas-reporter": "^2.2.2",
+    "hardhat-tracer": "^3.1.0"
   }
 }
