@@ -1,6 +1,6 @@
 # Infinity (pow memecoin token)
 
-#### Deployments
+#### Deployments (deployed on Sonic Mainnet and Sonic Blaze Testnet)
 | Contract| Address |
 |--|--|
 | Infinity.sol | 0x888852d1c63c7b333efEb1c4C5C79E36ce918888 |
@@ -13,7 +13,7 @@
 -  `difficulty` - controls submissions speed
 
 You can get current values with contract read or listen event with new values
-```
+```solidity
 function privateKeyA() external view returns (uint256);
 function difficulty() external view returns (uint160);
 
@@ -31,7 +31,7 @@ event NewProblem(uint256 privateKeyA, uint160 difficulty);
 
 #### How to construct message:
 ethers.js
-```
+```javascript
 ethers.solidityPackedKeccak256(
     ["address", "bytes"],
     [recipient, data]
@@ -39,16 +39,16 @@ ethers.solidityPackedKeccak256(
 ```
 
 solidity
-```
+```solidity
 keccak256(abi.encodePacked(recipient, data))
 ```
 
 4. Run transaction with call `PoW.submit`
-```
+```solidity
 PoW.submit(
-recipient, // used in message in #3
-publicKeyB,
-signatureAB, // calculated in #3
-data, // used in message in #3 
-)
+    recipient, // used in message in #3
+    publicKeyB,
+    signatureAB, // calculated in #3
+    data, // used in message in #3
+);
 ```
